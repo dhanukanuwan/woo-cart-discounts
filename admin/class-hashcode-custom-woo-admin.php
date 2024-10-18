@@ -100,6 +100,15 @@ class Hashcode_Custom_Woo_Admin {
 			return;
 		}
 
+		$excluded_products = WC_Admin_Settings::get_option( 'hashcode_discount_excluded_products' );
+
+		if ( empty( $excluded_products ) || ! is_array( $excluded_products ) ) {
+			$excluded_products = array();
+		} else {
+			// Convert array value to int values.
+			$excluded_products = array_map( 'intval', $excluded_products );
+		}
+
 		$cart_items = $cart->get_cart();
 
 		if ( empty( $cart_items ) ) {
@@ -109,6 +118,11 @@ class Hashcode_Custom_Woo_Admin {
 		foreach ( $cart_items as $cart_item_key => $cart_item ) {
 
 			$cart_product_id = (int) $cart_item['product_id'];
+
+			// Skip to the next product if current product is excluded.
+			if ( in_array( $cart_product_id, $excluded_products, true ) ) {
+				continue;
+			}
 
 			if ( in_array( $cart_product_id, $purchased_product_ids, true ) ) {
 				$discounted_price = $cart_item['data']->get_price() / 2;
@@ -135,5 +149,85 @@ class Hashcode_Custom_Woo_Admin {
 		}
 
 		return $price;
+	}
+
+	/**
+	 * Cross-sells settings tab.
+	 *
+	 * @since 1.0.0
+	 * @param array $tabs .
+	 */
+	public function hashcode_product_discount_settings_tab( $tabs ) {
+
+		$tabs['hashcode_product_discount'] = __( '50% discount settings', 'hashcode-custom-woo' );
+
+		return $tabs;
+	}
+
+	/**
+	 * Cross-sells settings tab.
+	 *
+	 * @since 1.0.0
+	 */
+	public function hashcode_product_discount_settings_tab_content() {
+
+		WC_Admin_Settings::output_fields( $this->hashcode_product_discount_settings() );
+	}
+
+	/**
+	 * Cross-sells settings tab.
+	 *
+	 * @since 1.0.0
+	 */
+	public function hashcode_product_discount_settings_tab_save() {
+
+		WC_Admin_Settings::save_fields( $this->hashcode_product_discount_settings() );
+	}
+
+	/**
+	 * Cross-sells settings.
+	 *
+	 * @since 1.0.0
+	 */
+	private function hashcode_product_discount_settings() {
+
+		$products = get_posts(
+			array(
+				'post_type'      => 'product',
+				'posts_per_page' => -1,
+			)
+		);
+
+		$product_options = array();
+
+		if ( ! empty( $products ) && ! is_wp_error( $products ) ) {
+			foreach ( $products as $product ) {
+				$product_options[ $product->ID ] = $product->post_title;
+			}
+		}
+
+		$settings = array(
+			array(
+				'name' => __( 'Exclude products from automatic 50% discount', 'hashcode-custom-woo' ),
+				'type' => 'title',
+			),
+			array(
+				'name'              => __( 'Excluded products list', 'hashcode-custom-woo' ),
+				'desc_tip'          => __( 'Please select all products you want to be excluded from automatic 50% discount', 'hashcode-custom-woo' ),
+				'id'                => 'hashcode_discount_excluded_products',
+				'type'              => 'multiselect',
+				'class'             => 'wc-enhanced-select',
+				'css'               => 'min-width: 350px;',
+				'options'           => $product_options,
+				'custom_attributes' => array(
+					'placeholder' => __( 'Select products...', 'hashcode-custom-woo' ),
+				),
+			),
+			array(
+				'type' => 'sectionend',
+			),
+		);
+
+		return $settings;
 	}
 }

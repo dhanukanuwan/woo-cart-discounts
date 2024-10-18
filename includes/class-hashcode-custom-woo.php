@@ -148,8 +148,11 @@ class Hashcode_Custom_Woo {
 		$plugin_admin = new Hashcode_Custom_Woo_Admin( $this->get_plugin_name(), $this->get_version() );
 
 		$this->loader->add_action( 'woocommerce_before_calculate_totals', $plugin_admin, 'hashcode_customer_post_purchase_discount', 999, 1 );
+		$this->loader->add_action( 'woocommerce_settings_hashcode_product_discount', $plugin_admin, 'hashcode_product_discount_settings_tab_content' );
+		$this->loader->add_action( 'woocommerce_settings_save_hashcode_product_discount', $plugin_admin, 'hashcode_product_discount_settings_tab_save' );
 
 		$this->loader->add_filter( 'woocommerce_cart_item_price', $plugin_admin, 'hashcode_display_sale_price_in_cart', 30, 2 );
+		$this->loader->add_filter( 'woocommerce_settings_tabs_array', $plugin_admin, 'hashcode_product_discount_settings_tab', 50 );
 	}
 
 	/**
